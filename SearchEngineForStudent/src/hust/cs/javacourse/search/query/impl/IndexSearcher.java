@@ -1,11 +1,17 @@
 package hust.cs.javacourse.search.query.impl;
 
+import hust.cs.javacourse.search.index.AbstractPosting;
+import hust.cs.javacourse.search.index.AbstractPostingList;
 import hust.cs.javacourse.search.index.AbstractTerm;
+import hust.cs.javacourse.search.index.impl.Posting;
 import hust.cs.javacourse.search.query.AbstractHit;
 import hust.cs.javacourse.search.query.AbstractIndexSearcher;
 import hust.cs.javacourse.search.query.Sort;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class IndexSearcher extends AbstractIndexSearcher {
     /**
@@ -28,9 +34,21 @@ public class IndexSearcher extends AbstractIndexSearcher {
      */
     @Override
     public AbstractHit[] search(AbstractTerm queryTerm, Sort sorter) {
-
-
-        return new AbstractHit[0];
+        AbstractPostingList postingList = index.search(queryTerm);  //取得Term对应的PostingList
+        if(postingList == null)
+            return null;
+        List<AbstractHit> list = new ArrayList<>();
+        for(int i = 0 ; i < postingList.size() ; ++i){
+            AbstractPosting posting = postingList.get(i);
+            String path = index.getDocName(posting.getDocId());
+            HashMap<AbstractTerm,AbstractPosting> map = new HashMap<>();
+            map.put(queryTerm,posting);
+            AbstractHit hit = new Hit(posting.getDocId(),path,map);
+            hit.setScore(sorter.score(hit));
+            list.add(hit);
+        }
+        sorter.sort(list);
+        return list.toArray(new AbstractHit[0]);
     }
 
     /**
@@ -44,6 +62,55 @@ public class IndexSearcher extends AbstractIndexSearcher {
      */
     @Override
     public AbstractHit[] search(AbstractTerm queryTerm1, AbstractTerm queryTerm2, Sort sorter, LogicalCombination combine) {
-        return new AbstractHit[0];
+        AbstractPostingList postingList1 = index.search(queryTerm1);
+        AbstractPostingList postingList2 = index.search(queryTerm2);
+        if(postingList1 == null && postingList2 == null)
+            return null;
+        List<AbstractHit> list = new ArrayList<>();
+        int len1 = postingList1 == null ? 0 : postingList1.size();
+        int len2 = postingList2 == null ? 0 : postingList2.size();
+        int i = 0 , j = 0;
+        Posting temp = new Posting(-1,-1,null);
+        while (i < len1 || j < len2){
+            assert postingList1 != null;
+            AbstractPosting posting1 = i < len1 ? postingList1.get(i) : temp;
+            assert postingList2 != null;
+            AbstractPosting posting2 = j < len2 ? postingList2.get(j) : temp;
+            int docId1 = posting1.getDocId(), docId2 = posting2.getDocId();
+            if(docId1 == docId2 && docId1 != -1){  //且
+                String path = index.getDocName(docId1);
+                HashMap<AbstractTerm,AbstractPosting> map = new HashMap<>();
+                map.put(queryTerm1,posting1);
+                map.put(queryTerm2,posting2);
+                AbstractHit hit = new Hit(docId1,path,map);
+                hit.setScore(sorter.score(hit));
+                list.add(hit);
+                i++;
+                j++;
+            }else if(docId1 < docId2 && docId1 != -1 ){  //或
+                if(combine == LogicalCombination.OR) {
+                    String path = index.getDocName(docId1);
+                    HashMap<AbstractTerm, AbstractPosting> map = new HashMap<>();
+                    map.put(queryTerm1, posting1);
+                    AbstractHit hit = new Hit(docId1, path, map);
+                    hit.setScore(sorter.score(hit));
+                    list.add(hit);
+                }
+                i++;
+            }else {
+                if(combine == LogicalCombination.OR && docId2 != -1){
+                    String path = index.getDocName(docId2);
+                    HashMap<AbstractTerm,AbstractPosting> map = new HashMap<>();
+                    map.put(queryTerm2,posting2);
+                    AbstractHit hit = new Hit(docId2,path,map);
+                    hit.setScore(sorter.score(hit));
+                    list.add(hit);
+                }
+                j++;
+            }
+        }
+        sorter.sort(list);
+        //TODO:待完成两个搜索词
+        return list.toArray(new AbstractHit[0]);
     }
 }

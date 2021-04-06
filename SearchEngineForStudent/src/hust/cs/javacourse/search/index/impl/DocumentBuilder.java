@@ -4,6 +4,8 @@ import hust.cs.javacourse.search.index.AbstractDocument;
 import hust.cs.javacourse.search.index.AbstractDocumentBuilder;
 import hust.cs.javacourse.search.index.AbstractTermTuple;
 import hust.cs.javacourse.search.parse.AbstractTermTupleStream;
+import hust.cs.javacourse.search.parse.impl.LengthTermTupleFilter;
+import hust.cs.javacourse.search.parse.impl.PatternTermTupleFilter;
 import hust.cs.javacourse.search.parse.impl.StopWordTermTupleFilter;
 import hust.cs.javacourse.search.parse.impl.TermTupleScanner;
 
@@ -50,7 +52,7 @@ public class DocumentBuilder extends AbstractDocumentBuilder {
         try {
             bufferReader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             termTupleScanner = new TermTupleScanner(bufferReader);
-            termTupleScanner = new StopWordTermTupleFilter(termTupleScanner);
+            termTupleScanner = new StopWordTermTupleFilter(new PatternTermTupleFilter(new LengthTermTupleFilter(termTupleScanner)));
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

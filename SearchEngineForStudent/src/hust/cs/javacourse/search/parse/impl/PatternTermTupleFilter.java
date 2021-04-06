@@ -11,16 +11,20 @@ import java.util.regex.Pattern;
 
 public class PatternTermTupleFilter extends AbstractTermTupleFilter {
     private Pattern pattern = Pattern.compile(Config.TERM_FILTER_PATTERN);
-
+    /**
+     * kong构造函
+     */
+    public PatternTermTupleFilter(){
+        super();
+    }
     /**
      * 构造函数
      *
      * @param input ：Filter的输入，类型为AbstractTermTupleStream
-     * @param regex : 设置正则表达式的过滤类型
      */
-    public PatternTermTupleFilter(AbstractTermTupleStream input, String regex) {
+    public PatternTermTupleFilter(AbstractTermTupleStream input) {
         super(input);
-        this.pattern = Pattern.compile(regex);
+        this.pattern = Pattern.compile(Config.TERM_FILTER_PATTERN);
 
     }
 

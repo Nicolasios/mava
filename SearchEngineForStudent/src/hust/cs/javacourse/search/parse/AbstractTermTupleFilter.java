@@ -25,6 +25,9 @@ public abstract class AbstractTermTupleFilter extends AbstractTermTupleStream{
         this.input = input;
     }
 
+    public AbstractTermTupleFilter() {
+    }
+
     /**
      * 实现父类AbstractTermTupleStream的close方法，关闭流
      */
